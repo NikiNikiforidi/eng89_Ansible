@@ -1,0 +1,137 @@
+# This is a playbook to install and set up Nginx in our web server (192.168.33.10)
+# This playbook is written in YAML and YAML starts with three --- at the top (This is who you know it's a yml file)
+
+---
+
+# sudo coding of the instructions we need:
+# name of the host - hosts is to define the name of your host or all
+# This tells the controller which server the controller needs to talk to
+
+- hosts: web
+
+
+# Find the facts about the host, this is optional to gather more info
+  gather_facts: yes
+
+
+# We need admin access
+  become: true
+
+
+# Instructions using tasks module in ansible. Instructions to give to controller
+  tasks:
+
+  - name: Install Nginx
+
+# install nginx
+    apt: pkg=nginx state=present  update_cache=yes
+
+#  ensure its running/ active
+#  update cache
+#  restart nginx if reverse proxy is implemented
+
+# Like a notification
+    notify:
+      - restart nginx
+
+
+# To allow port 80
+  - name: Allow all access to tcp port 80
+    ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+
+# handler to restart nginx
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
+
+
+
+-
+  name: Installing nodejs
+  hosts: web
+  become: true
+  tasks:
+    - name: Add nodejs apt key
+      apt_key:
+        url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+        state: present
+
+
+    - name: Installing nodejs
+      apt:
+        update_cache: yes
+        name: nodejs
+        state: present
+
+    - name: Install npm
+      apt: pkg=npm state=present
+
+    - name: Install pm2
+      npm:
+        name: pm2
+        global: yes
+        production: yes
+        state: present        
+-
+  name: Reverse proxy
+  hosts: web
+  become: true
+  tasks:
+    - name: Delete current default filw
+      file:
+        path: /etc/nginx/sites-available/default
+        state: absent
+
+    - name: Create new file"
+      file:
+        path: /etc/nginx/sites-available/default
+        state: touch
+        mode: 0644
+
+    - name: Change default file
+      blockinfile:
+        path: /etc/nginx/sites-available/default
+        block: |
+          server {
+            listen 80;
+            server_name _;
+            location / {
+              include proxy_params;
+              proxy_pass http://192.168.33.10:3000;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade \$http_upgrade;
+              proxy_set_header Connection 'upgrade';
+              proxy_set_header Host \$host;
+              proxy_cache_bypass \$http_upgrade;
+           }
+          }
+      notify:
+        - Restart nginx
+
+    - name: update npm
+      command: npm install pm2 -g -y
+  handlers:
+
+  - name: Restart nginx
+    service:
+      name: nginx
+      state: restarted
+
+- name: Starting app
+  hosts: web
+  become: true
+  tasks:
+   - name: Starting node.js
+     shell: |
+       cd app/
+       npm install
+       pm2 kill
+       pm2 start app.js
+
+# NEED TO SYNC APP FOLDER
+# NEED TO CREATE VARIABLE

@@ -21,15 +21,15 @@ Vagrant.configure("2") do |config|
     
     web.vm.network :private_network, ip: "192.168.33.10"
     #   assigning private IP
-    
+    web.vm.synced_folder "/Users/Niki/eng89_Ansible/app", "/home/vagrant/app"
+
     config.hostsupdater.aliases = ["development.web"]
     # creating a link called development.web so we can access web page with this link instread of an IP   
         
   end
   
 # creating second VM called db
-  config.vm.define "db" do |db|
-    
+  config.vm.define "db" do |db| 
     db.vm.box = "bento/ubuntu-18.04"
     
     db.vm.hostname = 'db'
