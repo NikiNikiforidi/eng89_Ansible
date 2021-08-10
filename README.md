@@ -8,6 +8,70 @@
 ![Ansible](https://user-images.githubusercontent.com/86292184/128696124-b0d2cfdf-6096-48b9-8865-47316f301d35.png)
 
 
+<br> </br>
+
+### Setting up Ansible in Controller
+
+- Run the below commands
+```
+sudo apt-get update
+  
+sudo apt-get install software-properties-common
+  
+sudo apt-add-repository ppa:ansible/ansible
+  
+sudo apt-get update
+  
+sudo apt-get install ansible
+
+```
+- To check if it's installed, run:
+` ansible--version`
+<br> </br>
+- 
+
+- Navigate to cd/etc/ansible 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ - -----------------------
+ ansible all -a "uname -a"
+
+
+
+- ----------------
+###Task pseudo code
+
+On the web server  we would like to install node js with required dependencies so we could launch the nodeapp on web server's IP
+- The moving onto configuration reverse proxy eiyh nginx so we would launch the app on port 80 instead of 3000
+- hosts : web
+- gather_facts: yes
+
+- Instructions in this playbook to install modejs
+- tasks:install nodejs
+
+
+- shell:
+- copy the app code to web server( you could close it from repo, copy from your controller to web or os to web)
+- go toright location (cd) to install npm, ac app
+- npm start
+
+- ----------------
+
 
 <br> </br>
 # Ansible controller and agent nodes set up guide
