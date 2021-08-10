@@ -15,6 +15,7 @@
       file:
         path: /etc/mongodb.conf
         state: absent
+
 # create a mongodb.conf file with required permissions
     - name: Touch a file, using symbolic modes to set the permissions ( equivalent to 0644)
       file: 
@@ -23,11 +24,11 @@
         mode: u=rw, g=r, o=r
 
 # set up mongodb.conf with correct port and ip to allow access
-    - name: Insert ultiple lines and backup
+    - name: Insert multiple lines and backup
       blockinfile:
         path: /etc/mongodb.conf
         block: |
-          storage: 
+          "storage: 
             dbPath: /var/lib/mongodb
             journal:
               enabled: true
@@ -37,7 +38,7 @@
             path: /var/log/mongodb/mongod.log
           net:
             port: 27017
-            bindIp: 0.0.0.0
+            bindIp: 0.0.0.0"
     - name: Restart mongodb
       become: true
       shell: systemctl restart mongodb  
@@ -48,6 +49,6 @@
       shell: systemctl enable mongodb
 
 # restart mongodb with admin access
-    - name: srart mongodb
+    - name: start mongodb
       become true
       shell: systemctl start mongodb      

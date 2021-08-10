@@ -19,7 +19,7 @@
 - ----------------------------------------------------------
 
 
-###Vagrant file to set up 3 VMs
+### Vagrant file to set up 3 VMs
 
 ```
 
@@ -46,6 +46,9 @@ Vagrant.configure("2") do |config|
     web.vm.network :private_network, ip: "192.168.33.10"
     #   assigning private IP
     
+    web.vm.synced_folder "/Users/Niki/eng89_Ansible/app", "/home/vagrant/app"
+
+
     config.hostsupdater.aliases = ["development.web"]
     # creating a link called development.web so we can access web page with this link instread of an IP   
         
@@ -84,7 +87,7 @@ end
 - --------------------------------------------
 ### Setting up Ansible 
 - Run the below commands in **Controller** VM
-
+- This only would work for vagrant
 ```
 sudo apt-get update
   
@@ -146,12 +149,11 @@ sudo apt-get install ansible
 ```
 
 [web]
-192.168.33.10 ansible_connection=ssh ansible_ssh_user=vagrant ansible_ssh_pass=enter_password
+192.168.33.10 ansible_connection=ssh ansible_ssh_user=vagrant ansible_ssh_pass= ENTER_PASSWORD
 
 
 [db]
-192.168.33.11 ansible_connection=ssh ansible_ssh_user=vagrant ansible_ssh_pass=enter_password
-
+192.168.33.11 ansible_connection=ssh ansible_ssh_user=vagrant ansible_ssh_pass=ENTER_PASSWORD
 
 ```
 - Now that you had added the servers, you can try ping them
@@ -181,58 +183,7 @@ sudo apt-get install ansible
 - Create a file `sudo nano nginx_playbook.yml`
 - **Indentation is very important**
 ```
-# This is a playbook to install and set up Nginx in our web server (192.168.33.10)
-# This playbook is written in YAML and YAML starts with three --- at the top (This is who you know it's a yml file)
-
----
-
-# sudo coding of the instructions we need:
-# name of the host - hosts is to define the name of your host or all
-# This tells the controller which server the controller needs to talk to
-
-- hosts: web
-
-
-# Find the facts about the host, this is optional to gather more info
-  gather_facts: yes
-
-
-# We need admin access
-  become: true
-
-
-# Instructions using tasks module in ansible. Instructions to give to controller
-  tasks:
-
-  - name: Install Nginx
-
-# install nginx
-    apt: pkg=nginx state=present  update_cache=yes
-
-#  ensure its running/ active
-#  update cache
-#  restart nginx if reverse proxy is implemented
-
-# Like a notification
-    notify:
-      - restart nginx
-
-
-# To allow port 80
-  - name: Allow all access to tcp port 80
-    ufw:
-        rule: allow
-        port: '80'
-        proto: tcp
-
-# handler to restart nginx
-  handlers:
-    - name: Restart Nginx
-      service:
-        name: nginx
-        state: restarted
-
-
+CHECK OUT NGINX_PLAYBOOK.YML FILE
 ```
 
 - To check if nginx is active/isntalled, run
@@ -263,3 +214,104 @@ On the web server  we would like to install node js with required dependencies s
 - npm start
 <br> </br>
 
+- ---------------------------------------------
+## Create an ansible vault for aws keys
+- cd /etc/ansible
+- `sudo apt install python3-pip`
+- `sudo pip3 install awscli `
+- `sudo pip3 install boto boto3
+`
+- `sudo apt-get update -y `
+- `sudo apt-get upgrade -y `
+- To check version
+- `aws --version`
+- Create new directory
+  - `sudo mkdir group_vars`
+  - Go into new directory
+  - `cd group_vars/`
+- Create new directory
+  - `sudo mkdir all`
+  - Go into new directory
+  - `cd all/`
+- Now you should be in `cd /etc/ansible/group_vars/all`
+<br> </br>
+- **To create ansible vault**
+- `sudo ansible-vault create pass.yml`
+  - It will ask to enter new Vault password: ENTER_PASSWORD
+  - It will ask to confirm passwork: REENTER PASSWROD
+
+  - A text edit will open, press i (-- INSERT--) and add :
+  ```
+  aws_access_key: 
+  aws_secret_key:
+  ```
+- **MAKE SURE TO NEVER SHARE YOUR AWS ACCESS AND SECRET KEYS**
+  - To save and exit editor
+    - press `esc`
+    - type `:wq!`
+    - press enter
+    <br> </br>
+- If you try `cat pass.yml` you should be blocked to seeing the keys
+<br> </br>
+- ------------------------------------------------
+### Create a playbook to launch an ec2 instance in Ireland region using your own SG, and subnet
+
+# playbook for launchin an aws ec2 instance
+
+```
+---
+
+- hosts: localhost
+  connection: local
+  gather_facts: yes
+  become: true
+  vars:
+    key_name: eng89_devops
+    region: eu-west-1
+    image: ami-039900c4ef89c6f9c
+    id: "eng89 ansible playbook to launch an aws ec2 instance"
+    sec_group: "sg-0e4a4d95cfa2c3ec0"
+    subnet_id: "subnet-00ac052b1e40c0164"
+    ansible_python_interpreter: /usr/bin/python3
+  tasks:
+
+    - name: Facts
+      block:
+
+      - name: Get instance facts
+        ec2_instance_facts:
+          aws_access_key: "{{aws_access_key}}"
+          aws_secret_key: "{{aws_secret_key}}"
+          region: "{{ region }}"
+        register: result
+
+    - name: provisioning ec2 instances
+      block:
+
+      - name: upload public key to aws_access_key
+        ec2_key:
+          name: "{{ key_name }}"
+          key_material: "{{ lookup('file', ~./ssh/{{ key_name }}.pub') }}"
+          region: "{{ region }}"
+          aws_access_key: "{{aws_access_key}}"
+          aws_secret_key: "{{aws_secret_key}}"
+
+      - name: provision instance
+        ec2:
+          aws_access_key: "{{aws_access_key}}"
+          aws_secret_key: "{{aws_secret_key}}"
+          assign_public_ip: True
+          key_name: "{{ key_name }}"
+          id: "{{ id }}"
+          vpc_subnet_id: "{{ subnet_id }}"
+          group_id: "{{ sec_group }}"
+          image: "{{ image }}"
+          instance_type: t2.micro
+          region: "{{ region }}"
+          wait: True
+          count: 1
+          instance_tags:
+            Name: eng89_niki_ansible_playbook
+            
+      tags: ['never', 'create_ec2']
+```
