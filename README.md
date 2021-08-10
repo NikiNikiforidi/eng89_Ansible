@@ -103,7 +103,7 @@ sudo apt-get install ansible
 - ------------------------------------------------------
 ### Navigate to hosts file
 
-- Navigate to `cd /etc/ansible `
+- Navigate to `cd /etc/ansible`
 - To check the files whithin the folder run `ls`
 - There is a more convenient way, although unnecessary, to see the files (SeeInstall Tree )
 <br> </br>
@@ -263,67 +263,3 @@ On the web server  we would like to install node js with required dependencies s
 - npm start
 <br> </br>
 
-```
-- hosts: web
-  gather_facts: yes
-  become: true
-  - name: Install Nginx
-    apt: pkg=nginx state=present  update_cache=yes
-    notify:
-      - restart nginx
-  - name: Allow all access to tcp port 80
-    ufw:
-        rule: allow
-        port: '80'
-        proto: tcp
-  handlers:
-    - name: Restart Nginx
-      service:
-        name: nginx
-        state: restarted
-
-
- name: "Installing nodejs"
- hosts: web
- become: true
- tasks:
-    - name: "Add nodejs"
-      apt_key:
-        url: https://deb.nodesource.com/gpgkey/nodesource.pgp.key
-        state: present
-    - name: add repo
-      apt_repository:
-        repo: deb https://deb.nodesource.com/node_13.x bionic main
-        update_cache: yes
-
-    - name: "Install nodejs"
-      apt:
-        update_cache: yes
-        name: nodejs
-        state: present
-
- name: "Reverse proxy"
- hosts: web
- become: true
- tasks:
-   - name: "Update default file"
-     blockinfile:
-       path: /etc/nginx/sites-available/default
-       block:
-         server{
-           listen 80;
-           server_name_;
-           location / {
-           proxy_pass http://192.168.33.10:3000;
-           proxy_http_version 1.1;
-           proxy_set_header Upgrade \$http_upgrade;
-           proxy_set_header Connection 'upgrade';
-           proxy_set_header Host |$host;
-           proxy_cache_bypass \$http_upgrade;
-           }
-         }             
-
-```
-
-
-- ----------------
