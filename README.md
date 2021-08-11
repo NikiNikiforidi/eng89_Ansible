@@ -183,11 +183,11 @@ sudo apt-get install ansible
 - Create a file `sudo nano nginx_playbook.yml`
 - **Indentation is very important**
 ```
-CHECK OUT NGINX_PLAYBOOK.YML FILE
+nginx_playbook.yml
 ```
 
 - To check if nginx is active/isntalled, run
-  - `ansible web -m shell -a "systemctl status nginx"`
+  - `ansible NAME_OF_INSTANCE -m shell -a "systemctl status nginx"`
 <br> </br>
 
 - To run playbook, run 
@@ -215,7 +215,7 @@ On the web server  we would like to install node js with required dependencies s
 <br> </br>
 
 - ---------------------------------------------
-## Create an ansible vault for aws keys
+## Install necessary packages
 - cd /etc/ansible
 - `sudo apt install python3-pip`
 - `sudo pip3 install awscli `
@@ -225,7 +225,10 @@ On the web server  we would like to install node js with required dependencies s
 - `sudo apt-get upgrade -y `
 - To check version
 - `aws --version`
-- Create new directory
+<br> </br>
+- ------------------------------------------------
+### Create an ansible vault for aws keys
+- Create new directory from `cd /etc/ansible`
   - `sudo mkdir group_vars`
   - Go into new directory
   - `cd group_vars/`
@@ -233,9 +236,9 @@ On the web server  we would like to install node js with required dependencies s
   - `sudo mkdir all`
   - Go into new directory
   - `cd all/`
-- Now you should be in `cd /etc/ansible/group_vars/all`
 <br> </br>
-- **To create ansible vault**
+- Now you should be in `cd /etc/ansible/group_vars/all`
+- Create ansible vault
 - `sudo ansible-vault create pass.yml`
   - It will ask to enter new Vault password: ENTER_PASSWORD
   - It will ask to confirm passwork: REENTER PASSWROD
@@ -253,65 +256,63 @@ On the web server  we would like to install node js with required dependencies s
     <br> </br>
 - If you try `cat pass.yml` you should be blocked to seeing the keys
 <br> </br>
+**TO RUN ANY COMMANDS FROM THIS POINT ON YOU NEED TO USE `--ask-vault-pass`**
 - ------------------------------------------------
+### Sync .pem file and create new SSH keys
+
+- Sync .pem folder to controller
+  - Navigate to where .pem file is on your local host and use `scp -i ~/.ssh/eng89_devops.pem -r eng89_devops.pem/ vagrant@CONTROLLER_IP:~/
+`
+  To move .pem file into .ssh in **controller**, run `mv name_of_key.pem .ssh/`
+
+<br> </br>
+- Create an ssh key in .ssh  in **controller**
+  - Past `ssh-keygen -t RSA -C "nnikiforidi@spartaglobal.com"
+` where you want to create SSH key pair ( in .ssh folder)
+  - Enter file in which to save the key : eng89_devops
+  - It'll prompt you with some more questions, press ENTER 2 times
+  - Should should have your keys
+<br> </br>
+- -------------------------------------
+
 ### Create a playbook to launch an ec2 instance in Ireland region using your own SG, and subnet
 
-# playbook for launchin an aws ec2 instance
+```
+ec2_playbook.yml
+```
+- The security group and subnet must allow ssh with your ip in inbound rules
+<br> </br>
+- To run playbook, run 
+`sudo ansible-playbook ec2_playbook.yml --ask-vault-pass --tags create_ec2
+`
+- Since you have set up asible vault, you will need to use `--ask-vault-pass` 
+<br> </br>
+- ---------------------------------------------
+### Update Hosts file
+- In **controller**
+- Add aws to host file
+  - Go to cd /etc/ansible
+  - Add this command to hosts file
+  - `[aws]
+ec2-instance ansible_host=INSTANCE_PUBLIC_IP ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/eng89_devops.pem`
+<br> </br>
+- Ping instance to see if it works
+- `sudo ansible all -m ping --ask-vault-pass
+`
+<br> </br>
+- ----------------------------------------------
+### SSH into instance from controller 
+<br> </br>
+**MAKE SURE THE IPs IN YOUR SECURITY GROUP AND nACL ARE UP TO DATE**
+- In **controller** ,navigate to .ssh file and SSH into instance `ssh -i "eng89_devops.pem" ubuntu@PUBLIC_INSTANCE_IP`
+<br> </br>
+- ------------------------------------------------
+### Create playbook for DataBase instance
+- In directory cd /etc/ansible, create new playbook
+- `sudo ansible-playbook mongodb_playbook.yml --ask-vault-pass`
 
 ```
----
-
-- hosts: localhost
-  connection: local
-  gather_facts: yes
-  become: true
-  vars:
-    key_name: eng89_devops
-    region: eu-west-1
-    image: ami-039900c4ef89c6f9c
-    id: "eng89 ansible playbook to launch an aws ec2 instance"
-    sec_group: "sg-0e4a4d95cfa2c3ec0"
-    subnet_id: "subnet-00ac052b1e40c0164"
-    ansible_python_interpreter: /usr/bin/python3
-  tasks:
-
-    - name: Facts
-      block:
-
-      - name: Get instance facts
-        ec2_instance_facts:
-          aws_access_key: "{{aws_access_key}}"
-          aws_secret_key: "{{aws_secret_key}}"
-          region: "{{ region }}"
-        register: result
-
-    - name: provisioning ec2 instances
-      block:
-
-      - name: upload public key to aws_access_key
-        ec2_key:
-          name: "{{ key_name }}"
-          key_material: "{{ lookup('file', ~./ssh/{{ key_name }}.pub') }}"
-          region: "{{ region }}"
-          aws_access_key: "{{aws_access_key}}"
-          aws_secret_key: "{{aws_secret_key}}"
-
-      - name: provision instance
-        ec2:
-          aws_access_key: "{{aws_access_key}}"
-          aws_secret_key: "{{aws_secret_key}}"
-          assign_public_ip: True
-          key_name: "{{ key_name }}"
-          id: "{{ id }}"
-          vpc_subnet_id: "{{ subnet_id }}"
-          group_id: "{{ sec_group }}"
-          image: "{{ image }}"
-          instance_type: t2.micro
-          region: "{{ region }}"
-          wait: True
-          count: 1
-          instance_tags:
-            Name: eng89_niki_ansible_playbook
-            
-      tags: ['never', 'create_ec2']
+o db_playbook.yml
 ```
+- To check status of mongodb`
+sudo ansible-playbook db_playbook.yml --ask-vault-pass`
