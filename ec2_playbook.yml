@@ -8,10 +8,10 @@
   vars:
     key_name: eng89_devops
     region: eu-west-1
-    image: ami-0d462fe3377430921
+    image: ami-0d462fe3377430921 #app ami
     id: "eng89 ansible playbook to launch an aws ec2 instance IDNiki"
-    sec_group: "sg-0c70b6873dbaf6a3c"
-    subnet_id: "subnet-0beb3752a965b5f20"
+    sec_group: "sg-0c70b6873dbaf6a3c" #application SG
+    subnet_id: "subnet-0beb3752a965b5f20" # Public subnet
     ansible_python_interpreter: /usr/bin/python3
   tasks:
 

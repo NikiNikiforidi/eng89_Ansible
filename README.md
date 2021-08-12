@@ -3,7 +3,8 @@
 
 
 
-![Ansible](https://user-images.githubusercontent.com/86292184/128696124-b0d2cfdf-6096-48b9-8865-47316f301d35.png)
+![Ansible](https://user-images.githubusercontent.com/86292184/129172547-ccb278dc-626a-4f61-972a-5b9c9fa02dbb.png)
+
 
 
 
@@ -301,7 +302,7 @@ ec2-instance ansible_host=INSTANCE_PUBLIC_IP ansible_user=ubuntu ansible_ssh_pri
 `
 <br> </br>
 - ----------------------------------------------
-### SSH into instance from controller 
+### SSH into app instance from controller 
 <br> </br>
 **MAKE SURE THE IPs IN YOUR SECURITY GROUP AND nACL ARE UP TO DATE**
 - In **controller** ,navigate to .ssh file and SSH into instance `ssh -i "eng89_devops.pem" ubuntu@PUBLIC_INSTANCE_IP`
@@ -312,7 +313,80 @@ ec2-instance ansible_host=INSTANCE_PUBLIC_IP ansible_user=ubuntu ansible_ssh_pri
 - `sudo ansible-playbook mongodb_playbook.yml --ask-vault-pass`
 
 ```
-o db_playbook.yml
+db_playbook.yml
 ```
-- To check status of mongodb`
-sudo ansible-playbook db_playbook.yml --ask-vault-pass`
+- (When creating the playboof, I left the)
+- Run teh playbook `sudo ansible-playbook db_playbook.yml --ask-vault-pass --tags create_ec2`
+
+<br> </br>
+- ------------------------------------------------
+### Update Hosts file
+- In **controller**
+- Add aws to host file
+  - Go to cd /etc/ansible
+  - Add this command to hosts file
+  - `[db]
+ec2-instance ansible_host=INSTANCE_PUBLIC_IP ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/eng89_devops.pem`
+<br> </br>
+- Ping instance to see if it works
+- `sudo ansible all -m ping --ask-vault-pass
+`
+<br> </br>
+**Make sure to change security group and nACL inabout/outboud rules so they can communicate**
+- -----------------------------------------
+
+### SSH into db instance from controller 
+<br> </br>
+**MAKE SURE THE IPs IN YOUR SECURITY GROUP AND nACL ARE UP TO DATE**
+- In **controller** ,navigate to .ssh file and SSH into instance `ssh -i "eng89_devops.pem" ubuntu@PUBLIC_INSTANCE_IP`
+<br> </br>
+
+- ------------------------------------------------------
+### Setting up add and db to launch web app in browser
+
+- In db instance:
+  - Navigate to `cd /etc`
+  - Open file `sudo nano mongod.conf`
+  - Change bindIP to 0.0.0.0
+  - `sudo systemctl restart mongod`
+  - `sudo systemctl enable mongod`
+
+<br> </br>
+
+- In app instance
+  - Create persistant variable:
+    - run command `sudo echo export DB_HOST="mongodb://DB_INSTANCE_PUBLIC_IP:27017/posts" >> ~/.bashrc`
+    - and `source ~/.bashrc`
+  - Change defualt file
+     - Navigate to `cd /etc/nginx/sites-available`
+     - Chnge default file to 
+
+     ```
+server {
+    listen 80;
+
+    server_name _;
+    location / {
+        proxy_pass http://APP_INSTANCE_PUBLIC_IP:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+
+     ```
+     - Restart nginx `sudo systemctl restart nginx`
+- Navigate to `cd /app`
+- Run app with ` npm start`
+<br></br>
+- ---------------------------------------------------
+**KEEP IN MIND**
+- Personal IPs may change
+- Update both security groups in aws: ssh -> YOUR_PRIVATE_IP and updadate db GS: 27017 -> PUBLIC_IP_APP_INSTANCE
+- Update both nACLs: ssh -> YOUR_PRIVATE_IP
+- Hosts file -> update both db and app instance ip 
+- Persistant environment variable  -> update public ip for db instance
+- Reverse proxi -> update pubib ip for app instance

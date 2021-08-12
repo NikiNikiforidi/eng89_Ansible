@@ -8,10 +8,10 @@
   vars:
     key_name: eng89_devops
     region: eu-west-1
-    image: ami-03c441061f0656f1b
+    image: ami-03c441061f0656f1b #DB ami
     id: "eng89 ansible db niki"
-    sec_group: "sg-0c1d9f7cd8e476ee9"
-    subnet_id: "subnet-0beb3752a965b5f20"
+    sec_group: "sg-0c1d9f7cd8e476ee9" # Database SG
+    subnet_id: "subnet-0beb3752a965b5f20" # Public subnet
     ansible_python_interpreter: /usr/bin/python3
   tasks:
 
