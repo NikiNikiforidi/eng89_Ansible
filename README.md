@@ -376,7 +376,7 @@ server {
 
 
 ```
-     - Restart nginx `sudo systemctl restart nginx`
+    - Restart nginx `sudo systemctl restart nginx`
 - Navigate to `cd /app`
 - Run app with ` npm start`
 <br></br>
