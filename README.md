@@ -336,11 +336,10 @@ ec2-instance ansible_host=INSTANCE_PUBLIC_IP ansible_user=ubuntu ansible_ssh_pri
 - -----------------------------------------
 
 ### SSH into db instance from controller 
-<br> </br>
-**MAKE SURE THE IPs IN YOUR SECURITY GROUP AND nACL ARE UP TO DATE**
+
 - In **controller** ,navigate to .ssh file and SSH into instance `ssh -i "eng89_devops.pem" ubuntu@PUBLIC_INSTANCE_IP`
 <br> </br>
-
+**MAKE SURE THE IPs IN YOUR SECURITY GROUP AND nACL ARE UP TO DATE**
 - ------------------------------------------------------
 ### Setting up add and db to launch web app in browser
 
