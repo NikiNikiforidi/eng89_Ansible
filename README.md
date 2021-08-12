@@ -358,9 +358,8 @@ ec2-instance ansible_host=INSTANCE_PUBLIC_IP ansible_user=ubuntu ansible_ssh_pri
     - and `source ~/.bashrc`
   - Change defualt file
      - Navigate to `cd /etc/nginx/sites-available`
-     - Chnge default file to 
-
-     ```
+     - Change default file to 
+```
 server {
     listen 80;
 
@@ -376,7 +375,7 @@ server {
 }
 
 
-     ```
+```
      - Restart nginx `sudo systemctl restart nginx`
 - Navigate to `cd /app`
 - Run app with ` npm start`
